@@ -1,22 +1,23 @@
 <!DOCTYPE html>
+
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lazarus-Zero | Live Pipeline Security & Autonomous Patching Dashboard</title>
-
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-
-    <!-- FontAwesome Icons -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Lazarus-Zero | Self-Healing Runtime Console</title>
+    <!-- Tailwind CSS with Forms and Container Queries -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- FontAwesome 6 Pro/Free Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" rel="stylesheet" />
     <!-- Google Fonts: Inter & JetBrains Mono -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
     <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-        rel="stylesheet">
-
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;family=JetBrains+Mono:wght@400;500;600;700&amp;display=swap"
+        rel="stylesheet" />
+    <!-- Prism.js Syntax Highlighting CSS -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <script>
         tailwind.config = {
             theme: {
@@ -26,15 +27,28 @@
                         mono: ['JetBrains Mono', 'monospace'],
                     },
                     colors: {
-                        brand: {
+                        emerald: {
                             50: '#ecfdf5',
                             100: '#d1fae5',
+                            200: '#a7f3d0',
+                            300: '#6ee7b7',
+                            400: '#34d399',
                             500: '#10b981',
                             600: '#059669',
                             700: '#047857',
+                            800: '#065f46',
                             900: '#064e3b',
                         },
-                        darkcard: '#0f172a'
+                        slate: {
+                            850: '#0f172a',
+                            900: '#0f172a',
+                            950: '#080d1a',
+                        }
+                    },
+                    boxShadow: {
+                        'glow-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.4)',
+                        'card-sm': '0 1px 3px 0 rgba(0, 0, 0, 0.04), 0 1px 2px -1px rgba(0, 0, 0, 0.03)',
+                        'card-md': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.04)',
                     }
                 }
             }
@@ -42,18 +56,15 @@
     </script>
     <style>
         body {
-            font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
+            color: #0f172a;
+            -webkit-font-smoothing: antialiased;
         }
 
-        .code-font {
-            font-family: 'JetBrains Mono', monospace;
-        }
-
-        /* Custom scrollbar */
+        /* Subtle clean scrollbars */
         ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 5px;
+            height: 5px;
         }
 
         ::-webkit-scrollbar-track {
@@ -69,657 +80,1507 @@
             background: #94a3b8;
         }
 
-        @keyframes pulseGlow {
+        /* Dark Terminal Scrollbar */
+        .term-scroll::-webkit-scrollbar {
+            width: 4px;
+            height: 4px;
+        }
+
+        .term-scroll::-webkit-scrollbar-track {
+            background: #080d1a;
+        }
+
+        .term-scroll::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 3px;
+        }
+
+        .term-scroll::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+
+        /* Prism clean code view overrides */
+        pre[class*="language-"] {
+            margin: 0 !important;
+            border-radius: 0 0 0.5rem 0.5rem !important;
+            border: none !important;
+            background: #ffffff !important;
+            font-size: 0.785rem !important;
+            line-height: 1.6 !important;
+            font-family: 'JetBrains Mono', monospace !important;
+            color: #334155 !important;
+        }
+
+        .token.comment,
+        .token.prolog,
+        .token.doctype,
+        .token.cdata {
+            color: #94a3b8 !important;
+            font-style: italic;
+        }
+
+        .token.punctuation {
+            color: #64748b !important;
+        }
+
+        .token.property,
+        .token.tag,
+        .token.boolean,
+        .token.number,
+        .token.constant,
+        .token.symbol {
+            color: #0284c7 !important;
+        }
+
+        .token.selector,
+        .token.attr-name,
+        .token.string,
+        .token.char,
+        .token.builtin {
+            color: #059669 !important;
+        }
+
+        .token.operator,
+        .token.entity,
+        .token.url,
+        .language-css .token.string,
+        .style .token.string {
+            color: #d97706 !important;
+        }
+
+        .token.atrule,
+        .token.attr-value,
+        .token.keyword {
+            color: #7c3aed !important;
+            font-weight: 600;
+        }
+
+        .token.function,
+        .token.class-name {
+            color: #2563eb !important;
+            font-weight: 600;
+        }
+
+        /* Stage pulsing active badge animation */
+        @keyframes pulse-emerald-node {
+            0% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(16, 185, 129, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+            }
+        }
+
+        .stage-active-pulse {
+            animation: pulse-emerald-node 1.4s infinite cubic-bezier(0.66, 0, 0, 1);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: flex;
+        }
+
+        /* Blinking terminal cursor */
+        @keyframes term-blink {
 
             0%,
+            49% {
+                opacity: 1;
+            }
+
+            50%,
             100% {
-                box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
-            }
-
-            50% {
-                box-shadow: 0 0 25px rgba(16, 185, 129, 0.8);
+                opacity: 0;
             }
         }
 
-        .active-pipeline-node {
-            animation: pulseGlow 1.5s infinite;
-            border-color: #10b981 !important;
-            color: #10b981 !important;
-            background-color: #ecfdf5 !important;
+        .term-cursor {
+            animation: term-blink 1s infinite;
         }
 
-        .slide-over {
-            transition: transform 0.3s ease-in-out;
+        /* Log entry highlight flash */
+        @keyframes log-flash-alert {
+            0% {
+                background-color: rgba(239, 68, 68, 0.28);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .log-entry-exploit {
+            animation: log-flash-alert 2.5s ease-out forwards;
+        }
+
+        @keyframes log-flash-hotfix {
+            0% {
+                background-color: rgba(16, 185, 129, 0.25);
+            }
+
+            100% {
+                background-color: transparent;
+            }
+        }
+
+        .log-entry-hotfix {
+            animation: log-flash-hotfix 2.5s ease-out forwards;
         }
     </style>
 </head>
 
-<body
-    class="text-slate-800 bg-slate-50 min-h-screen flex flex-col antialiased selection:bg-brand-100 selection:text-brand-900">
-
-    <!-- TOP HEADER -->
+<body class="h-screen w-full flex flex-col font-sans overflow-hidden bg-slate-50/50 text-slate-850">
+    <!-- TOP REFINED NAVBAR -->
     <header
-        class="bg-white border-b border-slate-200 sticky top-0 z-30 px-6 py-3 flex items-center justify-between shadow-sm">
-        <div class="flex items-center space-x-4">
+        class="h-14 bg-white border-b border-slate-200/90 flex items-center justify-between px-5 md:px-6 shrink-0 z-30 shadow-sm">
+        <div class="flex items-center gap-6">
             <!-- Brand Logo -->
-            <div class="flex items-center space-x-2.5 cursor-pointer" onclick="switchTab('dashboard')">
+            <div class="flex items-center gap-2.5">
                 <div
-                    class="w-9 h-9 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-md shadow-brand-500/20">
-                    <i class="fa-solid fa-shield-halved text-lg"></i>
+                    class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shadow-sm shadow-emerald-500/30">
+                    <i class="fa-solid fa-shield-halved text-base"></i>
                 </div>
-                <span class="text-xl font-extrabold tracking-tight text-slate-900">Lazarus<span
-                        class="text-brand-500">-Zero</span></span>
+                <div class="flex items-baseline gap-1.5">
+                    <span class="text-base font-extrabold tracking-tight text-slate-900">Lazarus-Zero</span>
+                    <span
+                        class="text-[10px] font-mono font-semibold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-200/60">v2.4
+                        LTS</span>
+                </div>
             </div>
-
-            <!-- Status Pill Badge -->
+            <!-- WSGI Active Pill -->
             <div
-                class="hidden sm:flex items-center space-x-2 bg-emerald-50 text-emerald-700 px-3.5 py-1 rounded-full text-xs font-semibold border border-emerald-200/60 shadow-sm">
-                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span>WSGI Shield Active</span>
-                <span class="text-emerald-300">|</span>
-                <span class="font-mono text-emerald-800">Flask / Gunicorn</span>
+                class="hidden md:flex items-center gap-2.5 bg-slate-50 px-3 py-1 rounded-full border border-slate-200/80 text-xs font-medium text-slate-700">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                </span>
+                <span class="font-semibold text-slate-800">WSGI Shield Active</span>
+                <span class="text-slate-300">|</span>
+                <span class="text-slate-500 font-mono text-[11px]">Flask / Gunicorn Worker [Shielded]</span>
             </div>
         </div>
-
         <!-- Right Header Items -->
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center gap-3.5">
+            <!-- Realtime Telemetry Pulse Chip -->
             <div
-                class="flex items-center space-x-2 bg-slate-100 text-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium border border-slate-200">
-                <i class="fa-solid fa-users text-slate-500"></i>
-                <span class="font-semibold">Team BitWise (HackNova 26)</span>
+                class="hidden lg:flex items-center gap-2 px-2.5 py-1 rounded-md bg-emerald-50/60 border border-emerald-200/70 text-[11px] text-emerald-800 font-medium">
+                <i class="fa-solid fa-bolt text-emerald-600 text-xs"></i>
+                <span>AST ASTRO-Engine: <span class="font-semibold font-mono text-emerald-700">Ready</span></span>
             </div>
-
-            <!-- Notification Bell -->
-            <button onclick="toggleNotificationDrawer()"
-                class="relative p-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-colors">
-                <i class="fa-regular fa-bell text-lg"></i>
-                <span id="unread-dot"
-                    class="absolute top-1.5 right-1.5 w-2.5 h-2.5 bg-red-500 rounded-full ring-2 ring-white"></span>
+            <!-- Bell Notification -->
+            <button
+                class="hover:text-emerald-600 text-slate-500 transition relative p-2 rounded-lg hover:bg-slate-100/80 border border-transparent hover:border-slate-200"
+                onclick="toggleNotificationDrawer()" title="Security Incidents Feed">
+                <i class="fa-regular fa-bell text-[16px]"></i>
+                <span
+                    class="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full ring-2 ring-white animate-pulse"
+                    id="bell-badge"></span>
             </button>
-
-            <!-- User Avatar -->
-            <div
-                class="w-8 h-8 bg-brand-600 text-white rounded-full flex items-center justify-center font-bold text-xs shadow-sm ring-2 ring-emerald-100">
-                BW
+            <div class="w-px h-5 bg-slate-200"></div>
+            <!-- User / Team BitWise Pill -->
+            <div class="flex items-center gap-2.5 pl-1 cursor-pointer">
+                <div
+                    class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-xs ring-2 ring-emerald-500/20">
+                    BW
+                </div>
+                <div class="hidden sm:flex flex-col text-left">
+                    <span class="text-xs font-semibold text-slate-800 leading-tight">Team BitWise</span>
+                    <span class="text-[10px] text-slate-500 font-mono">SecOps Engineer</span>
+                </div>
             </div>
         </div>
     </header>
-
-    <!-- MAIN CONTAINER WITH LEFT NAV & CONTENT -->
-    <div class="flex-1 flex overflow-hidden">
-
-        <!-- LEFT ICON NAVIGATION BAR -->
+    <div class="flex flex-1 overflow-hidden relative">
+        <!-- SIDEBAR NAVIGATION -->
         <aside
-            class="w-16 bg-white border-r border-slate-200 flex flex-col items-center py-5 space-y-4 flex-shrink-0 z-20">
-            <button id="nav-dashboard" onclick="switchTab('dashboard')" title="Dashboard"
-                class="w-10 h-10 rounded-xl flex items-center justify-center text-brand-600 bg-brand-50 transition-all">
-                <i class="fa-solid fa-chart-line text-lg"></i>
+            class="w-16 bg-white border-r border-slate-200/90 flex flex-col items-center py-4 gap-4 shrink-0 z-20 shadow-sm">
+            <button
+                class="nav-btn text-emerald-600 bg-emerald-50 p-2.5 rounded-xl transition duration-150 border border-emerald-200/60 relative group"
+                id="nav-dashboard" onclick="switchTab('dashboard')" title="Live Remediation Dashboard">
+                <i class="fa-solid fa-chart-line text-[17px]"></i>
+                <span
+                    class="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-white text-[11px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-50">Live
+                    Console</span>
             </button>
-            <button id="nav-reviewer" onclick="switchTab('reviewer')" title="Code Reviewer"
-                class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
-                <i class="fa-solid fa-code text-lg"></i>
+            <button
+                class="nav-btn text-slate-400 hover:text-emerald-600 hover:bg-slate-50 p-2.5 rounded-xl transition duration-150 relative group"
+                id="nav-reviewer" onclick="switchTab('reviewer')" title="AST Code Reviewer">
+                <i class="fa-solid fa-code text-[17px]"></i>
+                <span
+                    class="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-white text-[11px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-50">AST
+                    Code Reviewer</span>
             </button>
-            <button id="nav-incidents" onclick="switchTab('incidents')" title="Incidents Ledger"
-                class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all relative">
-                <i class="fa-solid fa-triangle-exclamation text-lg"></i>
-                <span id="incidents-badge"
-                    class="absolute -top-1 -right-1 bg-amber-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full hidden">0</span>
+            <button
+                class="nav-btn text-slate-400 hover:text-emerald-600 hover:bg-slate-50 p-2.5 rounded-xl transition duration-150 relative group"
+                id="nav-incidents" onclick="switchTab('incidents')" title="Forensic Audit Ledger">
+                <i class="fa-solid fa-triangle-exclamation text-[17px]"></i>
+                <span
+                    class="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-white text-[11px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-50">Forensic
+                    Ledger</span>
             </button>
-            <button id="nav-ml" onclick="switchTab('ml')" title="ML Models Engine"
-                class="w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all">
-                <i class="fa-solid fa-brain text-lg"></i>
+            <button
+                class="nav-btn text-slate-400 hover:text-emerald-600 hover:bg-slate-50 p-2.5 rounded-xl transition duration-150 relative group"
+                id="nav-models" onclick="switchTab('models')" title="ML Triage Engine">
+                <i class="fa-solid fa-brain text-[17px]"></i>
+                <span
+                    class="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-white text-[11px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-50">ML
+                    Triage Status</span>
+            </button>
+            <button
+                class="nav-btn text-slate-400 hover:text-emerald-600 hover:bg-slate-50 p-2.5 rounded-xl transition duration-150 mt-auto relative group"
+                id="nav-settings" onclick="switchTab('settings')" title="Shield Policies &amp; Settings">
+                <i class="fa-solid fa-gear text-[17px]"></i>
+                <span
+                    class="absolute left-16 ml-2 px-2 py-1 bg-slate-900 text-white text-[11px] rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition pointer-events-none z-50">Policy
+                    Settings</span>
             </button>
         </aside>
-
-        <!-- DASHBOARD TAB CONTENT -->
-        <main id="tab-dashboard" class="flex-1 p-6 overflow-y-auto">
-            <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6">
-
-                <!-- LEFT COLUMN: ATTACK TRIGGER SIMULATOR -->
-                <div class="lg:col-span-4 space-y-4">
-                    <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
-                        <div>
-                            <h2
-                                class="text-xs font-bold text-slate-900 tracking-wider uppercase flex items-center space-x-2">
-                                <span>ATTACK TRIGGER SIMULATOR</span>
-                            </h2>
-                            <p class="text-xs text-slate-500 mt-1 leading-relaxed">
-                                Inject active remote payloads to trigger live pipeline breakdown.
-                            </p>
-                        </div>
-
-                        <!-- EXPLOIT CARDS -->
-                        <div class="space-y-3">
-                            <!-- SQL Injection -->
-                            <div
-                                class="p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fa-solid fa-database text-amber-500 text-xs"></i>
-                                        <span class="text-xs font-bold text-slate-800">SQL Injection</span>
-                                    </div>
-                                    <span
-                                        class="px-2 py-0.5 bg-amber-100 text-amber-800 font-mono text-[10px] font-semibold rounded">CWE-89</span>
-                                </div>
-                                <p class="text-[11px] font-mono text-slate-500">f-string query rewrite in cur.execute()
-                                </p>
-                                <button onclick="triggerExploit('sqli')"
-                                    class="w-full py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center justify-center space-x-1.5">
-                                    <i class="fa-solid fa-play text-[10px] text-slate-500"></i>
-                                    <span>Launch Exploit</span>
-                                </button>
-                            </div>
-
-                            <!-- Crash / KeyError -->
-                            <div
-                                class="p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fa-solid fa-bug text-purple-500 text-xs"></i>
-                                        <span class="text-xs font-bold text-slate-800">Crash / KeyError</span>
-                                    </div>
-                                    <span
-                                        class="px-2 py-0.5 bg-purple-100 text-purple-800 font-mono text-[10px] font-semibold rounded">CWE-476</span>
-                                </div>
-                                <p class="text-[11px] font-mono text-slate-500">Unsafe dict key dereference in request
-                                </p>
-                                <button onclick="triggerExploit('crash')"
-                                    class="w-full py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center justify-center space-x-1.5">
-                                    <i class="fa-solid fa-play text-[10px] text-slate-500"></i>
-                                    <span>Launch Exploit</span>
-                                </button>
-                            </div>
-
-                            <!-- Command Injection -->
-                            <div
-                                class="p-3.5 border border-slate-200 rounded-xl bg-slate-50/50 hover:bg-white hover:border-slate-300 transition-all space-y-2">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fa-solid fa-terminal text-rose-500 text-xs"></i>
-                                        <span class="text-xs font-bold text-slate-800">Command Injection</span>
-                                    </div>
-                                    <span
-                                        class="px-2 py-0.5 bg-rose-100 text-rose-800 font-mono text-[10px] font-semibold rounded">CWE-78</span>
-                                </div>
-                                <p class="text-[11px] font-mono text-slate-500">Raw system shell execution via os.system
-                                </p>
-                                <button onclick="triggerExploit('cmd')"
-                                    class="w-full py-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center justify-center space-x-1.5">
-                                    <i class="fa-solid fa-play text-[10px] text-slate-500"></i>
-                                    <span>Launch Exploit</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- PRIMARY ACTION BUTTON -->
-                        <button onclick="triggerExploit('burst')"
-                            class="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-500/20 transition-all flex items-center justify-center space-x-2">
-                            <i class="fa-solid fa-bolt text-yellow-300"></i>
-                            <span>Simulate Multi-Vector Attack Burst</span>
-                        </button>
-
-                        <!-- LIVE APPLICATION MONITOR (DARK CARD) -->
-                        <div class="bg-slate-900 text-white rounded-xl p-4 shadow-lg border border-slate-800 space-y-3">
-                            <div class="flex items-center justify-between">
-                                <span class="text-[10px] font-bold tracking-wider uppercase text-emerald-400">LIVE
-                                    APPLICATION MONITOR</span>
-                                <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            </div>
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-network-wired text-emerald-400 text-sm"></i>
-                                <span class="font-mono text-sm font-bold text-white">192.168.1.15:5000</span>
-                            </div>
-                            <p class="text-xs text-slate-400">Telemetry Stream: WSGI Agent Active</p>
-                            <div class="pt-2 border-t border-slate-800 flex items-center justify-between text-xs">
-                                <span class="text-slate-400">Latency: <span
-                                        class="text-slate-200 font-mono">1.4ms</span></span>
-                                <span class="text-slate-400">Threats: <span id="threats-count"
-                                        class="text-emerald-400 font-mono font-bold">15</span></span>
-                            </div>
-                        </div>
+        <!-- VIEW 1: LIVE REMEDIATION DASHBOARD -->
+        <div class="tab-content active flex-1 overflow-hidden" id="tab-dashboard">
+            <!-- LEFT EXPLOIT SIMULATOR PANEL -->
+            <aside class="w-80 bg-white border-r border-slate-200/90 flex flex-col shrink-0">
+                <div class="p-4 border-b border-slate-100 bg-white">
+                    <div class="flex items-center justify-between mb-0.5">
+                        <h2 class="text-xs font-bold text-slate-900 uppercase tracking-wider flex items-center gap-1.5">
+                            <i class="fa-solid fa-flask-vial text-emerald-600"></i> Exploit Simulator
+                        </h2>
+                        <span
+                            class="text-[10px] font-mono bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded font-medium">Safe
+                            Testbed</span>
                     </div>
+                    <p class="text-[11px] text-slate-500 leading-normal">Inject real-world attack vectors to test
+                        auto-healing.</p>
                 </div>
-
-                <!-- RIGHT MAIN COLUMN -->
-                <div class="lg:col-span-8 space-y-6">
-
-                    <!-- CARD 1: AUTONOMOUS REMEDIATION PIPELINE -->
-                    <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-5">
-                        <div class="flex items-center justify-between">
-                            <div class="flex items-center space-x-2">
-                                <i class="fa-solid fa-diagram-project text-brand-600"></i>
-                                <h2 class="text-xs font-bold text-slate-900 tracking-wider uppercase">AUTONOMOUS
-                                    REMEDIATION PIPELINE</h2>
-                            </div>
-                            <span id="pipeline-status-badge"
-                                class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-medium border border-slate-200">
-                                Idle / Shield Guarding
-                            </span>
-                        </div>
-
-                        <!-- 5-STAGE STEPPER -->
-                        <div class="grid grid-cols-5 gap-2 relative">
-                            <!-- Stage 1 -->
-                            <div id="step-1"
-                                class="flex flex-col items-center p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all text-slate-400">
-                                <div
-                                    class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center mb-1.5">
-                                    <i class="fa-solid fa-shield text-xs"></i>
-                                </div>
-                                <span class="text-[11px] font-bold">1. Intercept</span>
-                            </div>
-
-                            <!-- Stage 2 -->
-                            <div id="step-2"
-                                class="flex flex-col items-center p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all text-slate-400">
-                                <div
-                                    class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center mb-1.5">
-                                    <i class="fa-solid fa-microchip text-xs"></i>
-                                </div>
-                                <span class="text-[11px] font-bold">2. ML Triage</span>
-                            </div>
-
-                            <!-- Stage 3 -->
-                            <div id="step-3"
-                                class="flex flex-col items-center p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all text-slate-400">
-                                <div
-                                    class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center mb-1.5">
-                                    <i class="fa-solid fa-code text-xs"></i>
-                                </div>
-                                <span class="text-[11px] font-bold">3. AST Patch</span>
-                            </div>
-
-                            <!-- Stage 4 -->
-                            <div id="step-4"
-                                class="flex flex-col items-center p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all text-slate-400">
-                                <div
-                                    class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center mb-1.5">
-                                    <i class="fa-solid fa-vial text-xs"></i>
-                                </div>
-                                <span class="text-[11px] font-bold">4. Sandbox</span>
-                            </div>
-
-                            <!-- Stage 5 -->
-                            <div id="step-5"
-                                class="flex flex-col items-center p-3 border border-slate-200 rounded-xl bg-slate-50 transition-all text-slate-400">
-                                <div
-                                    class="w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center mb-1.5">
-                                    <i class="fa-solid fa-bolt text-xs"></i>
-                                </div>
-                                <span class="text-[11px] font-bold">5. Hot-Swap</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- CARD 2: CODE VIEWER -->
-                    <div class="bg-white border border-slate-200/80 rounded-2xl p-5 shadow-sm space-y-4">
-                        <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <div class="flex items-center space-x-2 font-mono text-xs font-semibold text-slate-700">
-                                <i class="fa-regular fa-file-code text-slate-400"></i>
-                                <span>routes/user.py</span>
-                            </div>
-                            <span id="code-status-badge"
-                                class="px-2.5 py-0.5 bg-slate-100 text-slate-500 rounded text-xs font-medium">
-                                Awaiting Incident Trigger
-                            </span>
-                        </div>
-
-                        <!-- Red Bordered Block: Vulnerable Code -->
-                        <div class="border border-rose-200 rounded-xl p-3 bg-rose-50/30 space-y-2">
-                            <div class="flex items-center justify-between text-xs font-bold text-rose-700">
-                                <span>ORIGINAL VULNERABLE FUNCTION</span>
-                                <i class="fa-solid fa-bug"></i>
-                            </div>
-                            <pre id="code-before"
-                                class="code-font text-xs text-rose-900 bg-white p-3 rounded-lg border border-rose-100 overflow-x-auto"># Trigger an attack payload from the left panel to observe AST patch generation</pre>
-                        </div>
-
-                        <!-- Green Bordered Block: AST Patch -->
-                        <div class="border border-emerald-200 rounded-xl p-3 bg-emerald-50/30 space-y-2">
-                            <div class="flex items-center justify-between text-xs font-bold text-emerald-700">
-                                <span>DETERMINISTIC AST REWRITTEN PATCH</span>
-                                <i class="fa-solid fa-circle-check"></i>
-                            </div>
-                            <pre id="code-after"
-                                class="code-font text-xs text-emerald-900 bg-white p-3 rounded-lg border border-emerald-100 overflow-x-auto"># Dynamic AST hot-swap patch will render here in real-time</pre>
-                        </div>
-                    </div>
-
-                    <!-- CARD 3: KPI METRICS ROW -->
-                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-                        <!-- KPI 1 -->
-                        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm space-y-1">
-                            <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase block">MEAN TIME
-                                TO REMEDIATE</span>
-                            <div class="text-xl font-extrabold text-slate-900 font-mono">1.82s</div>
-                            <p class="text-[11px] text-emerald-600 font-semibold">↓ 99.8% faster <span
-                                    class="text-slate-400 font-normal">than human engineering</span></p>
-                        </div>
-
-                        <!-- KPI 2 -->
-                        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm space-y-1">
-                            <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase block">ACTIVE
-                                SHIELD STATUS</span>
-                            <div class="text-xl font-extrabold text-emerald-600 font-mono">100%</div>
-                            <p class="text-[11px] text-slate-500">Zero dropped connections</p>
-                        </div>
-
-                        <!-- KPI 3 -->
-                        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm space-y-1">
-                            <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase block">PATCH
-                                CONFIDENCE SCORE</span>
-                            <div class="text-xl font-extrabold text-slate-900 font-mono">99.4%</div>
-                            <p class="text-[11px] text-emerald-600 font-semibold">Hypothesis fuzzing verified</p>
-                        </div>
-
-                        <!-- KPI 4 -->
-                        <div class="bg-white border border-slate-200/80 rounded-xl p-4 shadow-sm space-y-1">
-                            <span class="text-[10px] font-bold text-slate-400 tracking-wider uppercase block">MYSQL SYNC
-                                VERSION</span>
-                            <div class="text-xl font-extrabold text-brand-600 font-mono">v1.0.8</div>
-                            <p class="text-[11px] text-slate-500">Multi-worker synced</p>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        </main>
-
-        <!-- CODE REVIEWER TAB CONTENT -->
-        <main id="tab-reviewer" class="flex-1 p-6 overflow-y-auto hidden">
-            <div class="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900">AI Static Code Reviewer</h2>
-                        <p class="text-xs text-slate-500">Inline vulnerability discovery & AST patch synthesizer</p>
-                    </div>
-                    <span
-                        class="px-3 py-1 bg-emerald-50 text-emerald-700 text-xs font-semibold rounded-full border border-emerald-200">
-                        AST Synthesizer Ready
-                    </span>
-                </div>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="border border-slate-200 rounded-xl p-3 bg-slate-50 space-y-2 text-xs font-mono">
-                        <div class="font-bold text-slate-700 pb-1 border-b border-slate-200">PROJECT FILES</div>
-                        <div class="text-brand-600 font-bold">📄 routes/user.py</div>
-                        <div class="text-slate-500 hover:text-slate-800 cursor-pointer">📄 routes/auth.py</div>
-                        <div class="text-slate-500 hover:text-slate-800 cursor-pointer">📄 middleware/shield.py</div>
-                        <div class="text-slate-500 hover:text-slate-800 cursor-pointer">📄 models/triage.py</div>
-                    </div>
+                <div class="p-4 flex flex-col gap-3.5 overflow-y-auto flex-1 bg-slate-50/40">
+                    <!-- Exploit Card: SQLi -->
                     <div
-                        class="md:col-span-3 border border-slate-200 rounded-xl p-4 bg-slate-900 text-slate-100 font-mono text-xs leading-relaxed space-y-3">
-                        <div class="text-slate-400">// routes/user.py</div>
-                        <div><span class="text-purple-400">@app.route</span>(<span
-                                class="text-emerald-300">'/api/user'</span>)</div>
-                        <div><span class="text-blue-400">def</span> <span class="text-yellow-300">get_user</span>():
+                        class="border border-slate-200/80 rounded-xl p-3.5 bg-white shadow-card-sm hover:border-emerald-300 transition group">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                <span
+                                    class="w-5 h-5 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center text-[10px] border border-amber-200/60">
+                                    <i class="fa-solid fa-database"></i>
+                                </span>
+                                SQL Injection
+                            </span>
+                            <span
+                                class="text-[10px] font-mono font-bold px-2 py-0.5 bg-amber-50 text-amber-700 border border-amber-200/60 rounded">CWE-89</span>
                         </div>
-                        <div class="pl-4">user_id = request.args.get(<span class="text-emerald-300">'id'</span>)</div>
-                        <div class="pl-4 bg-rose-950/80 p-1.5 rounded border-l-2 border-rose-500 my-1">
-                            <span class="text-rose-400"># CWE-89 SQL Injection Risk</span><br>
-                            query = f<span class="text-emerald-300">"SELECT * FROM users WHERE id = '{user_id}'"</span>
+                        <p class="text-[11px] text-slate-500 mb-3 font-sans">
+                            f-string query rewrite in <code
+                                class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded font-mono text-[10.5px]">cur.execute()</code>
+                        </p>
+                        <button
+                            class="w-full bg-white border border-slate-300/90 text-slate-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-all font-semibold text-xs py-2 rounded-lg flex items-center justify-center gap-2 shadow-sm group-hover:border-emerald-500 active:scale-[0.98]"
+                            id="btn-sqli" onclick="launchExploit('sqli')">
+                            <i class="fa-solid fa-play text-[10px] text-emerald-600 group-hover:text-white"></i> Launch
+                            Exploit
+                        </button>
+                    </div>
+                    <!-- Exploit Card: KeyError / Crash -->
+                    <div
+                        class="border border-slate-200/80 rounded-xl p-3.5 bg-white shadow-card-sm hover:border-emerald-300 transition group">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                <span
+                                    class="w-5 h-5 rounded-md bg-purple-50 text-purple-600 flex items-center justify-center text-[10px] border border-purple-200/60">
+                                    <i class="fa-solid fa-bug"></i>
+                                </span>
+                                KeyError / Crash
+                            </span>
+                            <span
+                                class="text-[10px] font-mono font-bold px-2 py-0.5 bg-purple-50 text-purple-700 border border-purple-200/60 rounded">CWE-476</span>
                         </div>
-                        <div class="pl-4 bg-emerald-950/80 p-1.5 rounded border-l-2 border-emerald-500 my-1">
-                            <span class="text-emerald-400"># Lazarus-Zero AST Synthesized Fix</span><br>
-                            cur.execute(<span class="text-emerald-300">"SELECT * FROM users WHERE id = %s"</span>,
-                            (user_id,))
+                        <p class="text-[11px] text-slate-500 mb-3 font-sans">Missing dict key dereference handling</p>
+                        <button
+                            class="w-full bg-white border border-slate-300/90 text-slate-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-all font-semibold text-xs py-2 rounded-lg flex items-center justify-center gap-2 shadow-sm group-hover:border-emerald-500 active:scale-[0.98]"
+                            id="btn-crash" onclick="launchExploit('crash')">
+                            <i class="fa-solid fa-play text-[10px] text-emerald-600 group-hover:text-white"></i> Launch
+                            Exploit
+                        </button>
+                    </div>
+                    <!-- Exploit Card: Command Injection -->
+                    <div
+                        class="border border-slate-200/80 rounded-xl p-3.5 bg-white shadow-card-sm hover:border-emerald-300 transition group">
+                        <div class="flex items-center justify-between mb-1.5">
+                            <span class="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                <span
+                                    class="w-5 h-5 rounded-md bg-rose-50 text-rose-600 flex items-center justify-center text-[10px] border border-rose-200/60">
+                                    <i class="fa-solid fa-terminal"></i>
+                                </span>
+                                Command Injection
+                            </span>
+                            <span
+                                class="text-[10px] font-mono font-bold px-2 py-0.5 bg-rose-50 text-rose-700 border border-rose-200/60 rounded">CWE-78</span>
                         </div>
-                        <div class="pl-4"><span class="text-blue-400">return</span> jsonify(cur.fetchone())</div>
+                        <p class="text-[11px] text-slate-500 mb-3 font-sans">Unsafe <code
+                                class="text-slate-700 bg-slate-100 px-1 py-0.5 rounded font-mono text-[10.5px]">os.system</code>
+                            shell execution</p>
+                        <button
+                            class="w-full bg-white border border-slate-300/90 text-slate-700 hover:bg-emerald-600 hover:border-emerald-600 hover:text-white transition-all font-semibold text-xs py-2 rounded-lg flex items-center justify-center gap-2 shadow-sm group-hover:border-emerald-500 active:scale-[0.98]"
+                            id="btn-cmdi" onclick="launchExploit('cmdi')">
+                            <i class="fa-solid fa-play text-[10px] text-emerald-600 group-hover:text-white"></i> Launch
+                            Exploit
+                        </button>
+                    </div>
+                    <!-- Multi-Vector Burst Button -->
+                    <div
+                        class="border border-dashed border-emerald-300/80 rounded-xl p-3 bg-emerald-50/30 flex flex-col gap-2">
+                        <div class="flex items-center justify-between">
+                            <span class="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
+                                <i class="fa-solid fa-arrows-split-up-and-left text-emerald-600"></i> Multi-Vector Burst
+                            </span>
+                            <span
+                                class="text-[9px] font-mono uppercase bg-emerald-100/80 text-emerald-700 px-1.5 py-0.2 rounded font-semibold">Stress
+                                Test</span>
+                        </div>
+                        <p class="text-[10.5px] text-slate-500">Inject asynchronous concurrent exploits into runtime
+                            ingress stream.</p>
+                        <button
+                            class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs py-1.5 rounded-lg flex items-center justify-center gap-1.5 shadow-sm transition active:scale-[0.98]"
+                            onclick="simulateBurstAttack()">
+                            <i class="fa-solid fa-bolt-lightning text-[10px]"></i> Simulate Attack Burst
+                        </button>
+                    </div>
+                    <!-- Live Application Shield Status Widget -->
+                    <div class="mt-auto border border-emerald-200 bg-emerald-50/40 rounded-xl p-3 flex flex-col gap-2">
+                        <div class="flex items-center justify-between text-[11px] font-semibold text-emerald-900">
+                            <span class="flex items-center gap-1.5"><i
+                                    class="fa-solid fa-network-wired text-emerald-600"></i> WSGI Proxy Port</span>
+                            <span class="font-mono text-emerald-700">:8080</span>
+                        </div>
+                        <div class="w-full bg-slate-200 h-1 rounded-full overflow-hidden">
+                            <div class="bg-emerald-500 h-1 rounded-full w-full"></div>
+                        </div>
+                        <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono">
+                            <span>Zero Glitch Guard</span>
+                            <span class="text-emerald-700 font-bold">100% Online</span>
+                        </div>
                     </div>
                 </div>
-            </div>
-        </main>
-
-        <!-- INCIDENTS LEDGER TAB CONTENT -->
-        <main id="tab-incidents" class="flex-1 p-6 overflow-y-auto hidden">
-            <div class="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-4">
-                <div class="flex items-center justify-between border-b border-slate-200 pb-4">
-                    <div>
-                        <h2 class="text-base font-bold text-slate-900">MySQL Forensic Audit Ledger</h2>
-                        <p class="text-xs text-slate-500">Immutable execution history & rollbacks</p>
+            </aside>
+            <!-- MAIN WORKSPACE -->
+            <main class="flex-1 overflow-y-auto p-5 md:p-6 flex flex-col gap-5 bg-slate-50/60">
+                <!-- AUTONOMOUS REMEDIATION PIPELINE STEPPER -->
+                <section class="bg-white border border-slate-200/90 rounded-2xl p-5 md:p-6 shadow-card-sm">
+                    <div class="flex items-center justify-between mb-6">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            <i class="fa-solid fa-diagram-project text-emerald-600"></i> Autonomous Remediation Pipeline
+                        </h3>
+                        <div class="flex items-center gap-2">
+                            <span
+                                class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 font-medium"
+                                id="pipeline-status-badge">Idle • Listening</span>
+                        </div>
                     </div>
-                    <button onclick="clearLedger()"
-                        class="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg border border-slate-200 transition-colors">
-                        Clear Display
+                    <!-- Modern 5-Stage Step Indicators -->
+                    <div class="relative max-w-4xl mx-auto px-4 py-2">
+                        <!-- Connector Background Line -->
+                        <div class="absolute left-10 right-10 top-7 h-1 bg-slate-100 -z-0 rounded-full"></div>
+                        <!-- Animated Progress Connector -->
+                        <div class="absolute left-10 top-7 h-1 bg-emerald-500 -z-0 rounded-full transition-all duration-300 ease-out shadow-sm shadow-emerald-500/40"
+                            id="pipeline-progress" style="width: 0%;"></div>
+                        <div class="flex items-start justify-between text-center relative z-10">
+                            <!-- Step 1: Intercept -->
+                            <div class="flex flex-col items-center gap-2 group cursor-pointer"
+                                onclick="filterAuditByStep(1)">
+                                <div class="w-10 h-10 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-400 text-sm transition-all shadow-sm"
+                                    id="step-icon-1">
+                                    <i class="fa-solid fa-shield-halved"></i>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs font-semibold text-slate-600" id="step-text-1">Intercept</span>
+                                    <span class="text-[10px] font-mono text-slate-400" id="step-time-1">0.8ms</span>
+                                </div>
+                            </div>
+                            <!-- Step 2: Triage -->
+                            <div class="flex flex-col items-center gap-2 group cursor-pointer"
+                                onclick="filterAuditByStep(2)">
+                                <div class="w-10 h-10 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-400 text-sm transition-all shadow-sm"
+                                    id="step-icon-2">
+                                    <i class="fa-solid fa-microchip"></i>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs font-semibold text-slate-600" id="step-text-2">Triage</span>
+                                    <span class="text-[10px] font-mono text-slate-400" id="step-time-2">14.2ms</span>
+                                </div>
+                            </div>
+                            <!-- Step 3: AST Patch -->
+                            <div class="flex flex-col items-center gap-2 group cursor-pointer"
+                                onclick="filterAuditByStep(3)">
+                                <div class="w-10 h-10 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-400 text-sm transition-all shadow-sm"
+                                    id="step-icon-3">
+                                    <i class="fa-solid fa-code"></i>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs font-semibold text-slate-600" id="step-text-3">AST Patch</span>
+                                    <span class="text-[10px] font-mono text-slate-400" id="step-time-3">118ms</span>
+                                </div>
+                            </div>
+                            <!-- Step 4: Sandbox -->
+                            <div class="flex flex-col items-center gap-2 group cursor-pointer"
+                                onclick="filterAuditByStep(4)">
+                                <div class="w-10 h-10 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-400 text-sm transition-all shadow-sm"
+                                    id="step-icon-4">
+                                    <i class="fa-solid fa-flask-conical"></i>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs font-semibold text-slate-600" id="step-text-4">Sandbox</span>
+                                    <span class="text-[10px] font-mono text-slate-400" id="step-time-4">840ms</span>
+                                </div>
+                            </div>
+                            <!-- Step 5: Hot-Swap -->
+                            <div class="flex flex-col items-center gap-2 group cursor-pointer"
+                                onclick="filterAuditByStep(5)">
+                                <div class="w-10 h-10 rounded-full border-2 border-slate-200 bg-white flex items-center justify-center text-slate-400 text-sm transition-all shadow-sm"
+                                    id="step-icon-5">
+                                    <i class="fa-solid fa-bolt"></i>
+                                </div>
+                                <div class="flex flex-col items-center">
+                                    <span class="text-xs font-semibold text-slate-600" id="step-text-5">Hot-Swap</span>
+                                    <span class="text-[10px] font-mono text-slate-400" id="step-time-5">18.5ms</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- CODE DIFF VIEWER -->
+                <section
+                    class="bg-white border border-slate-200/90 rounded-2xl shadow-card-sm overflow-hidden flex flex-col">
+                    <!-- Diff Header Bar matching screenshot style -->
+                    <div class="bg-white border-b border-slate-200/80 px-5 py-3 flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <i class="fa-regular fa-file-code text-slate-400 text-sm"></i>
+                            <span class="text-xs font-mono font-bold text-slate-800"
+                                id="diff-filename">routes/user.py</span>
+                            <span
+                                class="text-[10px] font-mono bg-slate-100 text-slate-500 px-2 py-0.5 rounded border border-slate-200/70">main</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span
+                                class="text-[11px] font-medium text-slate-500 border border-slate-200 px-3 py-1 rounded-full bg-slate-50"
+                                id="diff-status">
+                                Awaiting Incident
+                            </span>
+                        </div>
+                    </div>
+                    <!-- Split Diff Panels -->
+                    <div class="p-5 grid grid-cols-1 xl:grid-cols-2 gap-5 bg-white">
+                        <!-- Left: Original Vulnerable Function -->
+                        <div
+                            class="border border-rose-200/80 rounded-xl overflow-hidden flex flex-col bg-white shadow-sm">
+                            <div
+                                class="bg-rose-50/70 px-4 py-2 border-b border-rose-200/70 flex items-center justify-between">
+                                <span
+                                    class="text-[11px] font-bold text-rose-700 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-bug text-rose-500"></i> ORIGINAL VULNERABLE FUNCTION
+                                </span>
+                                <span class="text-[10px] font-mono text-rose-600">Runtime AST Snapshot</span>
+                            </div>
+                            <div class="p-4 flex-1 bg-white font-mono text-xs overflow-x-auto min-h-[160px]">
+                                <pre
+                                    class="language-python"><code class="language-python" id="code-vuln"># Select an exploit from the left panel to test AST transformation</code></pre>
+                            </div>
+                        </div>
+                        <!-- Right: Patched Deterministic Rewrite -->
+                        <div
+                            class="border border-emerald-200/90 rounded-xl overflow-hidden flex flex-col bg-white shadow-sm">
+                            <div
+                                class="bg-emerald-50/70 px-4 py-2 border-b border-emerald-200/70 flex items-center justify-between">
+                                <span
+                                    class="text-[11px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
+                                    <i class="fa-solid fa-shield-check text-emerald-600"></i> DETERMINISTIC AST
+                                    REWRITTEN PATCH
+                                </span>
+                                <span class="text-[10px] font-mono text-emerald-700">Validated In Sandbox</span>
+                            </div>
+                            <div class="p-4 flex-1 bg-white font-mono text-xs overflow-x-auto min-h-[160px]">
+                                <pre
+                                    class="language-python"><code class="language-python" id="code-patched"># Synthesized AST patch will render here in real-time</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+                <!-- WSGI INGRESS STREAM / LIVE REQUEST TERMINAL -->
+                <section
+                    class="bg-white border border-slate-200/90 rounded-2xl shadow-card-sm overflow-hidden flex flex-col">
+                    <!-- Terminal Header Bar -->
+                    <div
+                        class="bg-white border-b border-slate-200/80 px-5 py-3 flex flex-wrap items-center justify-between gap-3">
+                        <div class="flex items-center gap-3">
+                            <div
+                                class="w-7 h-7 rounded-lg bg-slate-900 text-emerald-400 flex items-center justify-center text-xs shadow-inner">
+                                <i class="fa-solid fa-terminal"></i>
+                            </div>
+                            <div class="flex items-baseline gap-2">
+                                <span
+                                    class="text-xs font-bold uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                                    WSGI Ingress Stream
+                                </span>
+                                <span class="text-[10px] font-mono text-slate-500 hidden sm:inline">Worker Pool /
+                                    Gunicorn Reverse Proxy</span>
+                            </div>
+                            <!-- Live Telemetry Pill -->
+                            <div
+                                class="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-mono font-medium">
+                                <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+                                <span id="term-rate-counter">42 req/s</span>
+                            </div>
+                        </div>
+                        <!-- Terminal Control Toolbar -->
+                        <div class="flex items-center gap-2">
+                            <!-- Auto-scroll switch -->
+                            <button
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                id="btn-term-autoscroll" onclick="toggleTermAutoScroll()">
+                                <i class="fa-solid fa-angles-down text-[10px] text-emerald-600"></i>
+                                <span id="txt-term-autoscroll">Auto-scroll: ON</span>
+                            </button>
+                            <!-- Pause/Resume stream button -->
+                            <button
+                                class="px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700"
+                                id="btn-term-pause" onclick="toggleTermStreaming()">
+                                <i class="fa-solid fa-pause text-[10px] text-amber-600" id="icon-term-pause"></i>
+                                <span id="txt-term-pause">Pause</span>
+                            </button>
+                            <!-- Clear Terminal Logs -->
+                            <button
+                                class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition text-xs"
+                                onclick="clearTermLogs()" title="Clear Terminal Log">
+                                <i class="fa-regular fa-trash-can"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <!-- Terminal Interior Box -->
+                    <div
+                        class="bg-[#0b1320] text-slate-200 font-mono text-[11.5px] p-4 flex flex-col border-t border-slate-900 shadow-inner">
+                        <!-- Terminal status metadata bar -->
+                        <div
+                            class="flex items-center justify-between text-[10px] text-slate-400 pb-2 mb-2 border-b border-slate-800/80">
+                            <div class="flex items-center gap-3">
+                                <span><i class="fa-solid fa-circle text-[7px] text-emerald-400 mr-1.5"></i>SOCKET: <span
+                                        class="text-slate-300">unix:/tmp/gunicorn.sock</span></span>
+                                <span class="hidden md:inline text-slate-600">|</span>
+                                <span class="hidden md:inline">FILTER: <span
+                                        class="text-emerald-400">AST-Interception-Hook</span></span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <span>TOTAL CAPTURED: <span class="text-slate-200 font-bold"
+                                        id="term-counter-total">128</span></span>
+                            </div>
+                        </div>
+                        <!-- Live streaming terminal rows -->
+                        <div class="h-44 overflow-y-auto term-scroll flex flex-col gap-1 pr-1 font-mono leading-relaxed select-text"
+                            id="terminal-stream-container">
+                            <!-- Initialized rows generated dynamically -->
+                        </div>
+                        <!-- Blinking prompt row -->
+                        <div
+                            class="pt-2 mt-1 border-t border-slate-800/60 flex items-center gap-2 text-[11px] text-emerald-400 select-none">
+                            <span class="text-slate-500 font-mono">$</span>
+                            <span class="text-slate-400">lazarus-zero-shield</span>
+                            <span class="text-emerald-500">&gt;&gt;</span>
+                            <span class="text-slate-300" id="term-prompt-msg">monitoring WSGI socket ingress...</span>
+                            <span class="w-2 h-3.5 bg-emerald-400 inline-block term-cursor"></span>
+                        </div>
+                    </div>
+                </section>
+                <!-- TELEMETRY KPI METRICS ROW (4 Cards matching design snapshot) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <!-- Metric 1: Avg MTTR -->
+                    <div
+                        class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AVG MTTR</span>
+                            <span
+                                class="text-[10px] font-mono text-emerald-700 bg-emerald-50 px-1.5 py-0.5 rounded font-semibold">-0.14s</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <div class="text-2xl font-bold font-mono text-slate-850" id="metric-mttr">1.82s</div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">Autonomous turnaround time</span>
+                    </div>
+                    <!-- Metric 2: Sandbox Pass Rate -->
+                    <div
+                        class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">SANDBOX PASS
+                                RATE</span>
+                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <div class="text-2xl font-bold font-mono text-emerald-600" id="metric-pass">100%</div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">1,000 fuzz vectors verified</span>
+                    </div>
+                    <!-- Metric 3: Active Workers -->
+                    <div
+                        class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">ACTIVE
+                                WORKERS</span>
+                            <span class="text-[10px] font-mono text-slate-500">PID: 4892</span>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <div class="text-2xl font-bold font-mono text-slate-850">4 / 4</div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">Zero worker restarts incurred</span>
+                    </div>
+                    <!-- Metric 4: MySQL Sync Version -->
+                    <div
+                        class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col justify-between">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider">MYSQL SYNC
+                                VERSION</span>
+                            <i class="fa-solid fa-check text-emerald-500 text-xs"></i>
+                        </div>
+                        <div class="flex items-baseline gap-2">
+                            <div class="text-2xl font-mono font-bold text-emerald-600" id="metric-ver">v1.0.4</div>
+                        </div>
+                        <span class="text-[10px] text-slate-400 mt-1">Forensic Ledger Master Synchronized</span>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <!-- VIEW 2: CODE REVIEWER -->
+        <div class="tab-content flex-1 overflow-hidden bg-slate-50/60 flex-row" id="tab-reviewer">
+            <!-- CODEBASE TREE -->
+            <aside class="w-64 bg-white border-r border-slate-200/90 flex flex-col shrink-0">
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Repository</span>
+                    <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-mono">main</span>
+                </div>
+                <div class="p-3 flex flex-col gap-1 text-xs">
+                    <div class="flex items-center gap-2 px-2 py-1.5 text-slate-500 font-bold uppercase text-[10px]">
+                        <i class="fa-regular fa-folder-open text-amber-500"></i> routes
+                    </div>
+                    <button
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-emerald-700 bg-emerald-50 font-medium border border-emerald-200/60"
+                        onclick="selectReviewFile('routes/user.py')">
+                        <i class="fa-regular fa-file-code"></i> user.py
+                    </button>
+                    <div
+                        class="flex items-center gap-2 px-2 py-1.5 text-slate-500 font-bold uppercase text-[10px] mt-2">
+                        <i class="fa-regular fa-folder text-amber-500"></i> middleware
+                    </div>
+                    <button
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-medium"
+                        onclick="selectReviewFile('middleware/shield.py')">
+                        <i class="fa-regular fa-file-code"></i> shield.py
+                    </button>
+                    <div
+                        class="flex items-center gap-2 px-2 py-1.5 text-slate-500 font-bold uppercase text-[10px] mt-2">
+                        <i class="fa-regular fa-folder text-amber-500"></i> models
+                    </div>
+                    <button
+                        class="flex items-center gap-2 px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 font-medium"
+                        onclick="selectReviewFile('models/triage.py')">
+                        <i class="fa-regular fa-file-code"></i> triage.py
                     </button>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
-                        <thead class="bg-slate-50 text-slate-500 font-semibold border-b border-slate-200">
+            </aside>
+            <!-- REVIEWER WORKSPACE -->
+            <main class="flex-1 flex flex-col overflow-hidden bg-white">
+                <div class="bg-slate-50 border-b border-slate-200/90 px-6 py-3 flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div class="flex items-center gap-2">
+                            <i class="fa-regular fa-file-code text-emerald-600 text-base"></i>
+                            <span class="text-xs font-mono font-bold text-slate-800"
+                                id="reviewer-file-title">routes/user.py</span>
+                        </div>
+                        <span
+                            class="text-[10px] bg-rose-50 text-rose-700 font-bold px-2.5 py-0.5 rounded-full border border-rose-200">
+                            Critical Vulnerability
+                        </span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button
+                            class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition shadow-sm flex items-center gap-1.5"
+                            onclick="launchExploit('sqli')">
+                            <i class="fa-solid fa-wand-magic-sparkles text-xs"></i> Synthesize AST Patch
+                        </button>
+                    </div>
+                </div>
+                <div class="flex-1 overflow-y-auto p-6 flex flex-col gap-4">
+                    <!-- INLINE ANNOTATION CARD -->
+                    <div class="bg-rose-50 border border-rose-200 rounded-xl p-4 flex gap-4">
+                        <div class="text-rose-500 text-lg"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                        <div class="flex-1 flex flex-col gap-1">
+                            <div class="flex items-center justify-between">
+                                <h4 class="text-xs font-bold text-rose-900">Line 14: SQL Injection Vulnerability
+                                    Detected (CWE-89)</h4>
+                                <span
+                                    class="text-[10px] font-mono bg-rose-200 text-rose-800 px-2 py-0.5 rounded font-semibold">RBF-SVM:
+                                    Active Exploit</span>
+                            </div>
+                            <p class="text-xs text-rose-700">
+                                Unescaped f-string interpolation directly inside <code>cur.execute()</code> allows
+                                arbitrary SQL execution via request query arguments.
+                            </p>
+                        </div>
+                    </div>
+                    <!-- CODE REVIEW PANEL -->
+                    <div class="border border-slate-200 rounded-xl overflow-hidden shadow-sm bg-white">
+                        <div
+                            class="bg-slate-50 px-4 py-2 border-b border-slate-200 text-xs font-bold text-slate-600 flex justify-between items-center">
+                            <span>Source Code Viewer</span>
+                            <span class="font-mono text-[10px] text-slate-400">Python 3.11</span>
+                        </div>
+                        <div class="p-4 bg-white font-mono text-xs">
+                            <pre class="language-python"><code class="language-python">@app.route("/user")
+def get_user():
+    name = request.args["name"]
+    
+    # [Lazarus-Zero Security Flag]: String-built query reaching execute()
+    cur.execute(f"SELECT * FROM users WHERE name = '{name}'")
+    
+    return jsonify(cur.fetchall())</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+        <!-- VIEW 3: INCIDENTS & FORENSIC LEDGER -->
+        <div class="tab-content flex-1 overflow-hidden p-6 bg-slate-50/60 flex-col gap-4" id="tab-incidents">
+            <div
+                class="flex items-center justify-between bg-white p-5 rounded-2xl border border-slate-200/90 shadow-card-sm">
+                <div>
+                    <h2 class="text-base font-bold text-slate-800">Forensic Audit Ledger (MySQL)</h2>
+                    <p class="text-xs text-slate-500">Immutable trace log of intercepted vulnerabilities, AST hot-swaps,
+                        and sandbox validations.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <input
+                        class="text-xs border border-slate-300 rounded-lg px-3 py-1.5 w-64 focus:outline-none focus:border-emerald-500 bg-white"
+                        id="audit-search" oninput="filterAuditLog()" placeholder="Search Incident ID or Bug Class..."
+                        type="text" />
+                    <button
+                        class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg shadow-sm transition flex items-center gap-1.5"
+                        onclick="exportGitPatchFile()">
+                        <i class="fa-solid fa-download text-xs"></i> Export Git Patch
+                    </button>
+                </div>
+            </div>
+            <div
+                class="bg-white border border-slate-200/90 rounded-2xl shadow-card-sm overflow-hidden flex-1 flex flex-col">
+                <div class="overflow-y-auto flex-1">
+                    <table class="w-full text-left border-collapse">
+                        <thead
+                            class="bg-slate-50 text-[11px] uppercase tracking-wider text-slate-500 border-b border-slate-200 sticky top-0 z-10 font-bold">
                             <tr>
-                                <th class="p-3">ID</th>
-                                <th class="p-3">Timestamp</th>
-                                <th class="p-3">Target Vector</th>
-                                <th class="p-3">Severity</th>
-                                <th class="p-3">Pipeline Status</th>
-                                <th class="p-3">Action</th>
+                                <th class="px-5 py-3.5">Incident ID</th>
+                                <th class="px-5 py-3.5">Timestamp</th>
+                                <th class="px-5 py-3.5">Class / Type</th>
+                                <th class="px-5 py-3.5">Location</th>
+                                <th class="px-5 py-3.5">MTTR</th>
+                                <th class="px-5 py-3.5">Confidence</th>
+                                <th class="px-5 py-3.5">Status / Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="ledger-rows" class="divide-y divide-slate-100 font-mono">
-                            <tr class="text-slate-400 italic">
-                                <td colspan="6" class="p-4 text-center">No attack incidents logged in this session yet.
-                                    Launch an exploit to populate telemetry.</td>
-                            </tr>
+                        <tbody class="text-xs text-slate-700 divide-y divide-slate-100" id="full-audit-table">
+                            <!-- Populated dynamically via JS -->
                         </tbody>
                     </table>
                 </div>
             </div>
-        </main>
-
-        <!-- ML MODELS TAB CONTENT -->
-        <main id="tab-ml" class="flex-1 p-6 overflow-y-auto hidden">
-            <div class="max-w-6xl mx-auto bg-white border border-slate-200 rounded-2xl p-6 shadow-sm space-y-6">
+        </div>
+        <!-- VIEW 4: ML TRIAGE MODELS -->
+        <div class="tab-content flex-1 overflow-y-auto p-6 bg-slate-50/60 flex-col gap-5" id="tab-models">
+            <div
+                class="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-card-sm flex items-center justify-between">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">ML Triage Engine Visualizer</h2>
-                    <p class="text-xs text-slate-500">Real-time payload entropy & RBF-SVM classification bounds</p>
+                    <h2 class="text-base font-bold text-slate-800">ML Triage Pipeline Status</h2>
+                    <p class="text-xs text-slate-500">PCA Feature Reduction + RBF-Kernel SVM Classifier + L1/L2 Severity
+                        Regression</p>
                 </div>
-                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
-                        <span class="text-xs font-bold text-slate-500 block">SHANNON ENTROPY</span>
-                        <div class="text-2xl font-mono font-bold text-brand-600">4.82 bits</div>
-                        <p class="text-[11px] text-slate-500">Threshold > 4.2 indicates payload obfuscation</p>
+                <span
+                    class="bg-emerald-50 border border-emerald-200 text-emerald-700 font-bold text-xs px-3.5 py-1 rounded-full">
+                    Accuracy: 98.4% (K-Fold CV)
+                </span>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Model 1 -->
+                <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">1. Feature Extractor &amp;
+                            PCA</h3>
+                        <i class="fa-solid fa-compress text-sky-500"></i>
                     </div>
-                    <div class="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
-                        <span class="text-xs font-bold text-slate-500 block">PCA VECTOR REDUCTION</span>
-                        <div class="text-2xl font-mono font-bold text-slate-800">98.2%</div>
-                        <p class="text-[11px] text-slate-500">Dimensionality reduced to 3 primary axes</p>
+                    <p class="text-xs text-slate-500 leading-relaxed">Compresses request payload entropy, length, token
+                        classes, and special characters into compact vectors.</p>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs font-mono text-slate-700">
+                        Input Dim: 32 -&gt; Output Dim: 4<br />
+                        Variance Retained: 96.2%
                     </div>
-                    <div class="p-4 border border-slate-200 rounded-xl bg-slate-50 space-y-2">
-                        <span class="text-xs font-bold text-slate-500 block">RBF-SVM CONFIDENCE</span>
-                        <div class="text-2xl font-mono font-bold text-emerald-600">0.994</div>
-                        <p class="text-[11px] text-slate-500">High precision malicious classification</p>
+                </div>
+                <!-- Model 2 -->
+                <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">2. RBF-Kernel SVM</h3>
+                        <i class="fa-solid fa-brain text-purple-500"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed">Classifies incident as Transient Glitch,
+                        Deterministic Code Bug, or Active Exploit payload.</p>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs font-mono text-slate-700">
+                        C: 1.0 | gamma: 'scale'<br />
+                        Precision: 0.99 | Recall: 0.98
+                    </div>
+                </div>
+                <!-- Model 3 -->
+                <div class="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-card-sm flex flex-col gap-3">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">3. L1/L2 Regression</h3>
+                        <i class="fa-solid fa-chart-line text-emerald-500"></i>
+                    </div>
+                    <p class="text-xs text-slate-500 leading-relaxed">Predicts severity rating (0.0 - 1.0) to weigh into
+                        auto-patch confidence policy.</p>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 text-xs font-mono text-slate-700">
+                        ElasticNet alpha: 0.01<br />
+                        Mean Squared Error: 0.004
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
-
-    <!-- SLIDE-OVER NOTIFICATION DRAWER -->
-    <div id="drawer-backdrop" onclick="toggleNotificationDrawer()"
-        class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-40 hidden transition-opacity"></div>
-    <div id="drawer"
-        class="fixed top-0 right-0 w-96 h-full bg-white border-l border-slate-200 shadow-2xl z-50 transform translate-x-full slide-over flex flex-col">
-        <div class="p-4 border-b border-slate-200 flex items-center justify-between">
-            <div class="flex items-center space-x-2">
-                <i class="fa-solid fa-bell text-brand-600"></i>
-                <h3 class="font-bold text-sm text-slate-900">Incident Stream</h3>
-            </div>
-            <button onclick="toggleNotificationDrawer()" class="p-1 text-slate-400 hover:text-slate-600 rounded">
-                <i class="fa-solid fa-xmark text-lg"></i>
-            </button>
         </div>
-        <div id="drawer-content" class="flex-1 overflow-y-auto p-4 space-y-3">
-            <p class="text-xs text-slate-400 text-center py-8">No recent notifications.</p>
-        </div>
-    </div>
-
-    <!-- ENGINEER VETTING MODAL -->
-    <div id="vetting-modal" class="fixed inset-0 bg-slate-900/50 z-50 hidden flex items-center justify-center p-4">
-        <div class="bg-white border border-slate-200 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 class="font-bold text-slate-900 text-sm">Human-in-the-Loop Patch Vetting</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-slate-600 text-sm"><i
-                        class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="space-y-2 text-xs font-mono bg-slate-50 p-3 rounded-lg border border-slate-200">
-                <div class="text-slate-500">PATCH ID: #LZ-8942-AST</div>
-                <div class="text-emerald-700 font-bold">STATUS: Sandbox Verified (100 Fuzz Tests Passed)</div>
-            </div>
-            <p class="text-xs text-slate-600">Approve this AST patch for permanent merge into the Git repository or
-                trigger an immediate hot-swap rollback.</p>
-            <div class="flex justify-end space-x-2 pt-2">
-                <button onclick="closeModal()"
-                    class="px-3 py-1.5 bg-rose-100 hover:bg-rose-200 text-rose-700 rounded-lg text-xs font-semibold">Rollback
-                    Patch</button>
-                <button onclick="closeModal()"
-                    class="px-3 py-1.5 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-xs font-semibold">Approve
-                    & Merge Git</button>
+        <!-- VIEW 5: SYSTEM SETTINGS -->
+        <div class="tab-content flex-1 overflow-y-auto p-6 bg-slate-50/60 flex-col gap-5" id="tab-settings">
+            <div
+                class="bg-white p-6 rounded-2xl border border-slate-200/90 shadow-card-sm max-w-3xl flex flex-col gap-4">
+                <h2 class="text-base font-bold text-slate-800 border-b border-slate-100 pb-3">Lazarus-Zero Safety Policy
+                </h2>
+                <div class="flex items-center justify-between py-2.5 border-b border-slate-100">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800">Auto-Apply Confidence Threshold</h4>
+                        <p class="text-[11px] text-slate-500">Patches scoring below this require human engineer
+                            approval.</p>
+                    </div>
+                    <span
+                        class="text-xs font-bold text-emerald-600 font-mono bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded">0.85
+                        (85%)</span>
+                </div>
+                <div class="flex items-center justify-between py-2.5 border-b border-slate-100">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800">Hypothesis Fuzzing Iterations</h4>
+                        <p class="text-[11px] text-slate-500">Number of generated inputs executed in shadow sandbox.</p>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 font-mono bg-slate-100 px-2 py-0.5 rounded">1,000
+                        runs</span>
+                </div>
+                <div class="flex items-center justify-between py-2.5">
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-800">Multi-Worker Polling Interval</h4>
+                        <p class="text-[11px] text-slate-500">Gunicorn worker sync frequency from MySQL ledger.</p>
+                    </div>
+                    <span class="text-xs font-bold text-slate-700 font-mono bg-slate-100 px-2 py-0.5 rounded">500
+                        ms</span>
+                </div>
             </div>
         </div>
+        <!-- SLIDE-OVER NOTIFICATION DRAWER -->
+        <div class="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white border-l border-slate-200 shadow-2xl z-40 transform translate-x-full transition-transform duration-300 ease-in-out flex flex-col"
+            id="notification-drawer">
+            <div class="h-14 px-5 border-b border-slate-200 flex items-center justify-between bg-white shrink-0">
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-bell text-emerald-600"></i>
+                    <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wide">Incident Security Feed</h2>
+                </div>
+                <button class="text-slate-400 hover:text-slate-700 transition p-1" onclick="toggleNotificationDrawer()">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-3 bg-slate-50/60" id="notification-list">
+                <!-- Dynamic cards -->
+            </div>
+        </div>
     </div>
-
-    <!-- JAVASCRIPT LOGIC -->
+    <!-- VETTING MODAL -->
+    <div class="fixed inset-0 z-50 flex items-center justify-center hidden" id="vetting-modal">
+        <div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onclick="closeVettingModal()"></div>
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[85vh] flex flex-col relative z-10 overflow-hidden transform scale-95 opacity-0 transition-all duration-300"
+            id="vetting-modal-content">
+            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-white">
+                <div class="flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+                    <h2 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Engineer Code Vetting Mode
+                    </h2>
+                </div>
+                <button class="text-slate-400 hover:text-slate-700 transition" onclick="closeVettingModal()">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="p-6 flex-1 overflow-y-auto flex flex-col gap-4">
+                <div
+                    class="flex items-center justify-between bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200 text-xs">
+                    <div>
+                        <span class="font-mono font-bold text-emerald-900 text-sm"
+                            id="modal-incident-id">INC-0000</span>
+                        <span class="text-emerald-700 font-semibold ml-2" id="modal-classification">SQL_INJECTION</span>
+                    </div>
+                    <span
+                        class="font-mono font-bold text-emerald-700 bg-white px-2 py-0.5 rounded border border-emerald-200"
+                        id="modal-confidence">Confidence: 99.1%</span>
+                </div>
+                <div class="border border-slate-200 rounded-xl overflow-hidden bg-white shadow-sm">
+                    <div
+                        class="bg-slate-50 px-4 py-2 border-b border-slate-200 text-xs font-bold text-slate-600 flex justify-between items-center">
+                        <span>Generated AST Code Diff</span>
+                        <span class="font-mono text-[10px] text-slate-400">Deterministic AST Rewriter</span>
+                    </div>
+                    <pre
+                        class="language-python p-4"><code class="language-python" id="modal-code-patched"># Diff view</code></pre>
+                </div>
+            </div>
+            <div class="px-6 py-3.5 border-t border-slate-200 bg-slate-50 flex items-center justify-end gap-2.5">
+                <button
+                    class="px-4 py-2 border border-rose-200 bg-rose-50 text-rose-600 hover:bg-rose-500 hover:text-white transition rounded-lg text-xs font-semibold flex items-center gap-1.5"
+                    onclick="rollbackPatch()">
+                    <i class="fa-solid fa-clock-rotate-left"></i> Trigger Rollback
+                </button>
+                <button
+                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white transition rounded-lg text-xs font-semibold shadow-sm flex items-center gap-1.5"
+                    onclick="approvePatch()">
+                    <i class="fa-solid fa-check"></i> Approve &amp; Merge Git Patch
+                </button>
+            </div>
+        </div>
+    </div>
+    <!-- TOAST CONTAINER -->
+    <div class="fixed bottom-5 right-5 z-50 flex flex-col gap-2" id="toast-container"></div>
+    <!-- Prism.js Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
     <script>
-        let threatCounter = 15;
-        let incidentLog = [];
-
-        const EXPLOITS = {
+        const exploitData = {
             sqli: {
-                name: 'SQL Injection',
-                cwe: 'CWE-89',
-                before: `def get_user_data(user_input):\n    # Unsafe string formatting\n    query = f"SELECT * FROM users WHERE name = '{user_input}'"\n    return db.execute(query)`,
-                after: `def get_user_data(user_input):\n    # Safe AST Parameterized Execution\n    query = "SELECT * FROM users WHERE name = %s"\n    return db.execute(query, (user_input,))`
+                filename: "routes/user.py",
+                functionName: "get_user()",
+                lineNo: 14,
+                type: "SQL_INJECTION",
+                typeClass: "bg-amber-50 text-amber-700 border border-amber-200/80",
+                payloadSample: "GET /user?name=' OR '1'='1",
+                astExplanation: "Synthesized AST transformer node to rewrite string format query to parameterized execute() with bound variables.",
+                vulnCode: `@app.route("/user")
+def get_user():
+    name = request.args["name"]
+    # Vulnerable to SQLi payload
+    cur.execute(f"SELECT * FROM users WHERE name = '{name}'")
+    return jsonify(cur.fetchall())`,
+                patchedCode: `@app.route("/user")
+def get_user():
+    name = request.args["name"]
+    # AST Parameterized Query Fix (Deterministic)
+    cur.execute("SELECT * FROM users WHERE name = %s", (name,))
+    return jsonify(cur.fetchall())`
             },
             crash: {
-                name: 'Crash / KeyError',
-                cwe: 'CWE-476',
-                before: `def parse_request(req):\n    # Direct key access without checks\n    val = req.json['user']['token']\n    return val`,
-                after: `def parse_request(req):\n    # Safe Dict Access\n    val = req.get('json', {}).get('user', {}).get('token', None)\n    return val`
+                filename: "services/billing.py",
+                functionName: "process_invoice()",
+                lineNo: 42,
+                type: "KEYERROR_CRASH",
+                typeClass: "bg-purple-50 text-purple-700 border border-purple-200/80",
+                payloadSample: 'POST /billing {"amount": 100}',
+                astExplanation: "Inserted safe dictionary getter .get() and KeyError guard clause with typed error fallback.",
+                vulnCode: `def process_invoice(payload):
+    # KeyError if user_id missing
+    user_id = payload["user_id"]
+    account = db.get_account(user_id)
+    return account.charge(payload["amount"])`,
+                patchedCode: `def process_invoice(payload):
+    # AST Guard Clause Fix (Deterministic)
+    user_id = payload.get("user_id")
+    if not user_id:
+        return {"error": "Missing user_id", "status": 400}, 400
+    account = db.get_account(user_id)
+    return account.charge(payload.get("amount", 0))`
             },
-            cmd: {
-                name: 'Command Injection',
-                cwe: 'CWE-78',
-                before: `def ping_host(host):\n    # Unsanitized shell call\n    os.system(f"ping -c 1 {host}")`,
-                after: `def ping_host(host):\n    # Parameterized subprocess execution\n    subprocess.run(["ping", "-c", "1", host], check=True)`
+            cmdi: {
+                filename: "utils/exporter.py",
+                functionName: "export_report()",
+                lineNo: 88,
+                type: "COMMAND_INJECTION",
+                typeClass: "bg-rose-50 text-rose-700 border border-rose-200/80",
+                payloadSample: "POST /export filename=test.pdf; cat /etc/passwd",
+                astExplanation: "Replaced os.system shell invocation with subprocess.run(shell=False) and argument list.",
+                vulnCode: `def export_report(filename):
+    # Unsafe shell execution
+    os.system(f"convert {filename} output.pdf")`,
+                patchedCode: `def export_report(filename):
+    # AST Subprocess argument-list Fix (Deterministic)
+    subprocess.run(["convert", filename, "output.pdf"], shell=False, check=True)`
             }
         };
 
-        function switchTab(tab) {
-            ['dashboard', 'reviewer', 'incidents', 'ml'].forEach(t => {
-                document.getElementById(`tab-${t}`).classList.add('hidden');
-                document.getElementById(`nav-${t}`).className = "w-10 h-10 rounded-xl flex items-center justify-center text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-all";
-            });
+        let isRunning = false;
+        let incidentRegistry = {};
+        let currentActiveIncidentId = null;
 
-            document.getElementById(`tab-${tab}`).classList.remove('hidden');
-            document.getElementById(`nav-${tab}`).className = "w-10 h-10 rounded-xl flex items-center justify-center text-brand-600 bg-brand-50 transition-all";
+        // Terminal Log State
+        let terminalAutoScroll = true;
+        let terminalStreaming = true;
+        let terminalStreamInterval = null;
+        let totalCapturedRequests = 128;
+
+        const normalEndpoints = [
+            { method: 'GET', route: '/api/v1/health', status: 200, client: '10.0.4.12' },
+            { method: 'GET', route: '/api/v1/user/profile?uid=902', status: 200, client: '172.16.0.45' },
+            { method: 'POST', route: '/api/v1/auth/tokens/refresh', status: 200, client: '192.168.1.109' },
+            { method: 'GET', route: '/metrics', status: 200, client: '127.0.0.1' },
+            { method: 'POST', route: '/api/v1/telemetry/heartbeat', status: 200, client: '10.0.12.98' },
+            { method: 'GET', route: '/api/v1/inventory/items?cat=storage', status: 200, client: '10.0.2.14' },
+            { method: 'GET', route: '/static/dashboard.js', status: 304, client: '192.168.1.84' },
+            { method: 'POST', route: '/api/v1/orders/quote', status: 200, client: '172.16.8.21' }
+        ];
+
+        // Format millisecond timestamp
+        function getTermTimestamp() {
+            const now = new Date();
+            return now.toTimeString().split(' ')[0] + '.' + String(now.getMilliseconds()).padStart(3, '0');
         }
 
-        function triggerExploit(type) {
-            const data = EXPLOITS[type] || EXPLOITS['sqli'];
+        // Add row to terminal
+        function appendTerminalRow(htmlString, isAlert = false, isHotfix = false) {
+            const container = document.getElementById('terminal-stream-container');
+            if (!container) return;
 
-            // Update UI Counters
-            threatCounter++;
-            document.getElementById('threats-count').textContent = threatCounter;
+            const div = document.createElement('div');
+            div.className = `flex items-start gap-2 py-0.5 px-1.5 rounded transition ${isAlert ? 'log-entry-exploit text-rose-300 font-semibold' :
+                    isHotfix ? 'log-entry-hotfix text-emerald-300 font-semibold' : 'text-slate-300 hover:bg-slate-800/40'
+                }`;
+            div.innerHTML = htmlString;
+            container.appendChild(div);
 
-            // Pipeline animation
-            const statusBadge = document.getElementById('pipeline-status-badge');
-            statusBadge.className = "px-2.5 py-1 bg-amber-100 text-amber-800 rounded-full text-xs font-semibold border border-amber-200 animate-pulse";
-            statusBadge.textContent = "Pipeline Active / Healing...";
+            totalCapturedRequests++;
+            const totalCountEl = document.getElementById('term-counter-total');
+            if (totalCountEl) totalCountEl.textContent = totalCapturedRequests;
 
-            for (let i = 1; i <= 5; i++) {
-                setTimeout(() => {
-                    document.getElementById(`step-${i}`).classList.add('active-pipeline-node');
-                }, i * 300);
+            // Trim old logs to maintain performance
+            if (container.children.length > 70) {
+                container.removeChild(container.firstChild);
             }
 
+            if (terminalAutoScroll) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function pushNormalRequestLog() {
+            if (!terminalStreaming) return;
+            const ep = normalEndpoints[Math.floor(Math.random() * normalEndpoints.length)];
+            const latency = (Math.random() * 2.8 + 0.6).toFixed(1);
+            const ts = getTermTimestamp();
+            const methodBg = ep.method === 'POST' ? 'bg-sky-950 text-sky-400 border-sky-800' : 'bg-emerald-950 text-emerald-400 border-emerald-800';
+            const statusBg = ep.status === 200 ? 'text-emerald-400' : 'text-amber-400';
+
+            const logHtml = `
+                <span class="text-slate-500 shrink-0 text-[10.5px]">${ts}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9.5px] border ${methodBg} font-bold shrink-0">${ep.method}</span>
+                <span class="${statusBg} font-bold text-[10.5px] shrink-0">${ep.status}</span>
+                <span class="text-slate-400 truncate flex-1 text-[11px]"><span class="text-slate-500">[${ep.client}]</span> ${ep.route}</span>
+                <span class="text-slate-500 font-mono text-[10px] shrink-0">${latency}ms</span>
+            `;
+            appendTerminalRow(logHtml);
+
+            // Jitter request rate counter slightly
+            const rate = Math.floor(Math.random() * 8) + 40;
+            const rateEl = document.getElementById('term-rate-counter');
+            if (rateEl) rateEl.textContent = `${rate} req/s`;
+        }
+
+        function pushExploitTerminalEvent(type, rawPayload, cwe, path) {
+            const ts = getTermTimestamp();
+            const alertHtml = `
+                <span class="text-rose-400 font-mono shrink-0">${ts}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9.5px] bg-rose-950 text-rose-300 border border-rose-800 font-bold shrink-0">EXPLOIT</span>
+                <span class="text-rose-400 font-bold shrink-0">[${cwe}]</span>
+                <span class="text-rose-200 font-bold flex-1 truncate"><i class="fa-solid fa-triangle-exclamation mr-1"></i> INTERCEPTED: ${path} &rarr; "${rawPayload}"</span>
+                <span class="text-amber-400 font-bold bg-amber-950/70 border border-amber-800 px-1.5 rounded text-[9.5px] shrink-0">SANDBOX TRIAGE</span>
+            `;
+            appendTerminalRow(alertHtml, true, false);
+
+            // Update terminal status text
+            const promptMsg = document.getElementById('term-prompt-msg');
+            if (promptMsg) promptMsg.textContent = `ALERT: Payload trapped by AST Hook -> ${cwe}`;
+
             setTimeout(() => {
-                // Update Code Viewers
-                document.getElementById('code-before').textContent = data.before;
-                document.getElementById('code-after').textContent = data.after;
-                document.getElementById('code-status-badge').className = "px-2.5 py-0.5 bg-emerald-100 text-emerald-800 rounded text-xs font-semibold";
-                document.getElementById('code-status-badge').textContent = `Hot-Swapped (${data.cwe})`;
-
-                // Reset pipeline nodes
-                for (let i = 1; i <= 5; i++) {
-                    document.getElementById(`step-${i}`).classList.remove('active-pipeline-node');
-                }
-
-                statusBadge.className = "px-2.5 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-semibold border border-emerald-200";
-                statusBadge.textContent = "Idle / Shield Guarding";
-
-                // Add to Incidents
-                logIncident(data.name, data.cwe);
-
+                const tsHotswap = getTermTimestamp();
+                const hotfixHtml = `
+                    <span class="text-emerald-400 font-mono shrink-0">${tsHotswap}</span>
+                    <span class="px-1.5 py-0.2 rounded text-[9.5px] bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold shrink-0">HOT-SWAP</span>
+                    <span class="text-emerald-400 font-bold shrink-0">[ZERO-DOWNTIME]</span>
+                    <span class="text-emerald-200 flex-1 truncate"><i class="fa-solid fa-shield-check mr-1"></i> AST Transformer synthesized &amp; hot-swapped for ${path}</span>
+                    <span class="text-emerald-400 font-mono text-[10px] shrink-0">0.00s drop</span>
+                `;
+                appendTerminalRow(hotfixHtml, false, true);
+                if (promptMsg) promptMsg.textContent = `monitoring WSGI socket ingress...`;
             }, 1800);
         }
 
-        function logIncident(name, cwe) {
-            const time = new Date().toLocaleTimeString();
-            const id = `#LZ-${Math.floor(1000 + Math.random() * 9000)}`;
+        function toggleTermAutoScroll() {
+            terminalAutoScroll = !terminalAutoScroll;
+            const btn = document.getElementById('btn-term-autoscroll');
+            const txt = document.getElementById('txt-term-autoscroll');
+            if (terminalAutoScroll) {
+                txt.textContent = 'Auto-scroll: ON';
+                btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700";
+            } else {
+                txt.textContent = 'Auto-scroll: OFF';
+                btn.className = "px-2.5 py-1 rounded-lg text-[11px] font-medium transition flex items-center gap-1.5 bg-slate-200 text-slate-600";
+            }
+        }
 
-            incidentLog.unshift({ id, time, name, cwe });
+        function toggleTermStreaming() {
+            terminalStreaming = !terminalStreaming;
+            const btnTxt = document.getElementById('txt-term-pause');
+            const icon = document.getElementById('icon-term-pause');
+            const rateEl = document.getElementById('term-rate-counter');
+            if (terminalStreaming) {
+                btnTxt.textContent = 'Pause';
+                icon.className = 'fa-solid fa-pause text-[10px] text-amber-600';
+                if (rateEl) rateEl.textContent = '42 req/s';
+                showToast("WSGI ingress stream resumed.");
+            } else {
+                btnTxt.textContent = 'Resume';
+                icon.className = 'fa-solid fa-play text-[10px] text-emerald-600';
+                if (rateEl) rateEl.textContent = 'PAUSED';
+                showToast("WSGI ingress stream paused.");
+            }
+        }
 
-            // Update Ledger
-            const tbody = document.getElementById('ledger-rows');
-            if (incidentLog.length === 1) tbody.innerHTML = '';
+        function clearTermLogs() {
+            const container = document.getElementById('terminal-stream-container');
+            if (container) {
+                container.innerHTML = '';
+                showToast("WSGI Ingress log buffer cleared.");
+            }
+        }
 
-            const row = document.createElement('tr');
-            row.className = "hover:bg-slate-50 transition-colors";
-            row.innerHTML = `
-                <td class="p-3 font-bold text-slate-700">${id}</td>
-                <td class="p-3 text-slate-500">${time}</td>
-                <td class="p-3 font-semibold text-slate-800">${name} (${cwe})</td>
-                <td class="p-3"><span class="px-2 py-0.5 bg-rose-100 text-rose-700 rounded text-[10px] font-bold">HIGH</span></td>
-                <td class="p-3"><span class="text-emerald-600 font-semibold">Hot-Swapped</span></td>
-                <td class="p-3"><button onclick="openModal()" class="text-brand-600 hover:underline font-semibold">Vet Patch</button></td>
-            `;
-            tbody.prepend(row);
+        // Simulate multi-vector burst
+        async function simulateBurstAttack() {
+            if (isRunning) return;
+            showToast("Simulating multi-vector burst: SQLi + KeyError + CmdInjection concurrently!", "error");
 
-            // Update Drawer
-            const drawerContent = document.getElementById('drawer-content');
-            if (incidentLog.length === 1) drawerContent.innerHTML = '';
+            // Fire bursts into terminal
+            const ts1 = getTermTimestamp();
+            appendTerminalRow(`
+                <span class="text-rose-400 font-mono shrink-0">${ts1}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9.5px] bg-rose-950 text-rose-300 border border-rose-800 font-bold shrink-0">BURST</span>
+                <span class="text-rose-400 font-bold shrink-0">[CWE-89]</span>
+                <span class="text-rose-200 truncate flex-1 font-bold">INJECT: GET /user?name=test' UNION SELECT * FROM users--</span>
+                <span class="text-amber-400 text-[10px] shrink-0">TRAFFIC SURGE</span>
+            `, true);
 
-            const item = document.createElement('div');
-            item.className = "p-3 border border-slate-200 rounded-xl bg-slate-50 space-y-1.5";
-            item.innerHTML = `
-                <div class="flex items-center justify-between text-xs font-bold">
-                    <span class="text-slate-800">${name} Intercepted</span>
-                    <span class="text-slate-400 font-mono">${time}</span>
-                </div>
-                <p class="text-[11px] text-slate-600">AST Patch synthesized and injected via dynamic reload.</p>
-                <button onclick="openModal()" class="text-xs text-brand-600 font-bold hover:underline">Vet Patch →</button>
-            `;
-            drawerContent.prepend(item);
+            await sleep(180);
 
-            // Show unread indicator
-            document.getElementById('incidents-badge').classList.remove('hidden');
-            document.getElementById('incidents-badge').textContent = incidentLog.length;
+            const ts2 = getTermTimestamp();
+            appendTerminalRow(`
+                <span class="text-purple-400 font-mono shrink-0">${ts2}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9.5px] bg-purple-950 text-purple-300 border border-purple-800 font-bold shrink-0">BURST</span>
+                <span class="text-purple-400 font-bold shrink-0">[CWE-476]</span>
+                <span class="text-purple-200 truncate flex-1 font-bold">INJECT: POST /billing payload missing 'user_id' deref</span>
+                <span class="text-amber-400 text-[10px] shrink-0">TRAFFIC SURGE</span>
+            `, true);
+
+            await sleep(220);
+
+            const ts3 = getTermTimestamp();
+            appendTerminalRow(`
+                <span class="text-rose-400 font-mono shrink-0">${ts3}</span>
+                <span class="px-1.5 py-0.2 rounded text-[9.5px] bg-rose-950 text-rose-300 border border-rose-800 font-bold shrink-0">BURST</span>
+                <span class="text-rose-400 font-bold shrink-0">[CWE-78]</span>
+                <span class="text-rose-200 truncate flex-1 font-bold">INJECT: POST /export filename=input.pdf; id; whoami</span>
+                <span class="text-amber-400 text-[10px] shrink-0">TRAFFIC SURGE</span>
+            `, true);
+
+            // Execute automated remediation cycle for the batch
+            launchExploit('sqli');
+        }
+
+        // Switch Navigation Tabs
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-emerald-600', 'bg-emerald-50', 'border', 'border-emerald-200/60');
+                el.classList.add('text-slate-400');
+            });
+
+            const activeTab = document.getElementById(`tab-${tabId}`);
+            if (activeTab) activeTab.classList.add('active');
+
+            const activeNav = document.getElementById(`nav-${tabId}`);
+            if (activeNav) {
+                activeNav.classList.add('text-emerald-600', 'bg-emerald-50', 'border', 'border-emerald-200/60');
+                activeNav.classList.remove('text-slate-400');
+            }
         }
 
         function toggleNotificationDrawer() {
-            const drawer = document.getElementById('drawer');
-            const backdrop = document.getElementById('drawer-backdrop');
-
+            const drawer = document.getElementById('notification-drawer');
+            const badge = document.getElementById('bell-badge');
             drawer.classList.toggle('translate-x-full');
-            backdrop.classList.toggle('hidden');
+            if (badge) badge.classList.add('hidden');
         }
 
-        function openModal() {
-            document.getElementById('vetting-modal').classList.remove('hidden');
-        }
+        function pushNotificationCard(incidentId, data, mttr, confidence) {
+            const list = document.getElementById('notification-list');
+            const card = document.createElement('div');
+            card.className = "bg-white border border-slate-200/90 rounded-xl p-3.5 shadow-card-sm hover:border-emerald-300 transition flex flex-col gap-2 border-l-4 border-l-emerald-500 text-xs";
 
-        function closeModal() {
-            document.getElementById('vetting-modal').classList.add('hidden');
-        }
-
-        function clearLedger() {
-            incidentLog = [];
-            document.getElementById('ledger-rows').innerHTML = `
-                <tr class="text-slate-400 italic">
-                    <td colspan="6" class="p-4 text-center">No attack incidents logged in this session yet. Launch an exploit to populate telemetry.</td>
-                </tr>
+            card.innerHTML = `
+                <div class="flex items-center justify-between border-b border-slate-100 pb-1.5">
+                    <span class="font-mono font-bold text-slate-900">${incidentId}</span>
+                    <span class="${data.typeClass} text-[9px] font-bold px-2 py-0.5 rounded">${data.type}</span>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400">Where Detected</span>
+                    <p class="font-mono text-slate-700 text-[11px]">${data.filename} &rarr; ${data.functionName}</p>
+                </div>
+                <div>
+                    <span class="text-[10px] uppercase font-bold text-slate-400">AST Fix</span>
+                    <p class="text-slate-600 text-[11px]">${data.astExplanation}</p>
+                </div>
+                <div class="flex items-center justify-between pt-1">
+                    <span class="text-[10px] font-mono text-emerald-600 font-semibold">MTTR: ${mttr}s</span>
+                    <button onclick="openVettingModal('${incidentId}')" class="bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold px-2.5 py-1 rounded text-[11px] border border-emerald-200/70">
+                        Review Patch
+                    </button>
+                </div>
             `;
-            document.getElementById('drawer-content').innerHTML = `<p class="text-xs text-slate-400 text-center py-8">No recent notifications.</p>`;
-            document.getElementById('incidents-badge').classList.add('hidden');
+            list.insertBefore(card, list.firstChild);
+            const badge = document.getElementById('bell-badge');
+            if (badge) badge.classList.remove('hidden');
+        }
+
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `px-3.5 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2.5 border transition-all ${type === 'error' ? 'bg-rose-50 text-rose-800 border-rose-200' : 'bg-slate-900 text-white border-slate-800'
+                }`;
+            toast.innerHTML = `<i class="fa-solid ${type === 'error' ? 'fa-triangle-exclamation text-rose-500' : 'fa-circle-check text-emerald-400'}"></i> <span>${message}</span>`;
+            container.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3800);
+        }
+
+        function openVettingModal(incidentId) {
+            const incident = incidentRegistry[incidentId];
+            if (!incident) return;
+            currentActiveIncidentId = incidentId;
+
+            document.getElementById('modal-incident-id').textContent = incidentId;
+            document.getElementById('modal-classification').textContent = incident.type;
+            document.getElementById('modal-confidence').textContent = "Confidence: " + incident.confidence + "%";
+
+            const codeBlock = document.getElementById('modal-code-patched');
+            codeBlock.textContent = exploitData[incident.exploitKey].patchedCode;
+            Prism.highlightElement(codeBlock);
+
+            const modal = document.getElementById('vetting-modal');
+            const content = document.getElementById('vetting-modal-content');
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                content.classList.remove('scale-95', 'opacity-0');
+                content.classList.add('scale-100', 'opacity-100');
+            }, 20);
+        }
+
+        function closeVettingModal() {
+            const modal = document.getElementById('vetting-modal');
+            const content = document.getElementById('vetting-modal-content');
+            content.classList.remove('scale-100', 'opacity-100');
+            content.classList.add('scale-95', 'opacity-0');
+            setTimeout(() => modal.classList.add('hidden'), 250);
+        }
+
+        function approvePatch() {
+            if (currentActiveIncidentId) {
+                const cell = document.getElementById(`status-${currentActiveIncidentId}`);
+                if (cell) {
+                    cell.innerHTML = `<span class="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200"><i class="fa-solid fa-check-double mr-1"></i>Merged Git</span>`;
+                }
+            }
+            closeVettingModal();
+            showToast("AST Patch approved and pushed to repository main branch.");
+        }
+
+        function rollbackPatch() {
+            if (currentActiveIncidentId) {
+                const cell = document.getElementById(`status-${currentActiveIncidentId}`);
+                if (cell) {
+                    cell.innerHTML = `<span class="text-rose-600 font-semibold bg-rose-50 px-2 py-0.5 rounded border border-rose-200"><i class="fa-solid fa-rotate-left mr-1"></i>Reverted</span>`;
+                }
+            }
+            closeVettingModal();
+            showToast("Rollback executed. Function reverted to previous version.", "error");
+        }
+
+        function exportGitPatchFile() {
+            showToast("Exported unified git diff file (.patch) to downloads.");
+        }
+
+        function selectReviewFile(filePath) {
+            document.getElementById('reviewer-file-title').textContent = filePath;
+            showToast(`Switched file to ${filePath}`);
+        }
+
+        function filterAuditByStep(stepIndex) {
+            showToast(`Inspecting Pipeline Stage ${stepIndex} forensic assertions.`);
+        }
+
+        const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+        async function animatePipeline() {
+            const progress = document.getElementById('pipeline-progress');
+            const statusBadge = document.getElementById('pipeline-status-badge');
+            progress.style.width = '0%';
+            statusBadge.className = "text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200 animate-pulse";
+            statusBadge.textContent = "Remediation Active";
+
+            // Stage labels
+            const stages = ["1. Intercepting Payload", "2. ML Feature Classification", "3. AST Node Synthesis", "4. Shadow Sandbox Fuzzing", "5. Atomic WSGI Hot-Swap"];
+
+            for (let i = 1; i <= 5; i++) {
+                statusBadge.textContent = stages[i - 1];
+                const icon = document.getElementById(`step-icon-${i}`);
+
+                // Highlight current active step
+                icon.className = "w-10 h-10 rounded-full border-2 border-emerald-500 bg-emerald-50 text-emerald-600 flex items-center justify-center text-sm stage-active-pulse transition-all shadow-md";
+                progress.style.width = `${(i - 1) * 25}%`;
+
+                // Add highlight to text
+                const textElem = document.getElementById(`step-text-${i}`);
+                if (textElem) textElem.className = "text-xs font-bold text-emerald-700";
+
+                await sleep(400);
+
+                // Mark completed step
+                icon.className = "w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm shadow-sm transition-all";
+                if (textElem) textElem.className = "text-xs font-semibold text-slate-700";
+            }
+
+            progress.style.width = '100%';
+            statusBadge.className = "text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 font-medium border border-emerald-200";
+            statusBadge.textContent = "Hot-Swap Live (0.00s downtime)";
+        }
+
+        function appendToAuditLog(type, typeClass, exploitKey) {
+            const tbody = document.getElementById('full-audit-table');
+            const id = `INC-${Math.floor(Math.random() * 9000 + 1000)}`;
+            const timeString = new Date().toLocaleTimeString();
+            const mttr = (Math.random() * (1.9 - 0.8) + 0.8).toFixed(2);
+            const confidence = (Math.random() * (99.8 - 97.0) + 97.0).toFixed(1);
+
+            incidentRegistry[id] = { type, confidence, exploitKey };
+
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-slate-50/70 transition bg-white";
+            tr.innerHTML = `
+                <td class="px-5 py-3.5 font-mono font-bold text-slate-900">${id}</td>
+                <td class="px-5 py-3.5 text-slate-500 font-mono text-[11px]">${timeString}</td>
+                <td class="px-5 py-3.5"><span class="${typeClass} px-2 py-0.5 rounded font-bold text-[10px] font-mono">${type}</span></td>
+                <td class="px-5 py-3.5 font-mono text-slate-600 text-[11px]">${exploitData[exploitKey].filename}</td>
+                <td class="px-5 py-3.5 font-mono text-slate-800 font-semibold">${mttr}s</td>
+                <td class="px-5 py-3.5 text-emerald-600 font-bold font-mono">${confidence}%</td>
+                <td class="px-5 py-3.5" id="status-${id}">
+                    <button onclick="openVettingModal('${id}')" class="text-xs text-emerald-600 font-bold hover:text-emerald-700 hover:underline">
+                        Vet Patch &rarr;
+                    </button>
+                </td>
+            `;
+            tbody.insertBefore(tr, tbody.firstChild);
+            pushNotificationCard(id, exploitData[exploitKey], mttr, confidence);
+
+            // Update telemetry avg
+            document.getElementById('metric-mttr').textContent = `${mttr}s`;
+        }
+
+        function filterAuditLog() {
+            const query = document.getElementById('audit-search').value.toLowerCase();
+            const rows = document.querySelectorAll('#full-audit-table tr');
+            rows.forEach(row => {
+                const text = row.innerText.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        }
+
+        async function launchExploit(type) {
+            if (isRunning) return;
+            isRunning = true;
+
+            const data = exploitData[type];
+            showToast(`Attack vector intercepted at ${data.filename}`, 'error');
+
+            // Inject attack event into live WSGI terminal
+            const cweTag = type === 'sqli' ? 'CWE-89' : type === 'crash' ? 'CWE-476' : 'CWE-78';
+            pushExploitTerminalEvent(type, data.payloadSample, cweTag, data.filename);
+
+            document.getElementById('diff-filename').textContent = data.filename;
+            const diffStatus = document.getElementById('diff-status');
+            diffStatus.textContent = "Synthesizing Fix...";
+            diffStatus.className = "text-xs font-semibold text-amber-700 border border-amber-300 px-3 py-1 rounded-full bg-amber-50 animate-pulse";
+
+            const vulnBlock = document.getElementById('code-vuln');
+            const patchedBlock = document.getElementById('code-patched');
+
+            vulnBlock.textContent = data.vulnCode;
+            patchedBlock.textContent = `# AST Transformation in progress...\n# Parsing Abstract Syntax Tree via libcst\n# Validating in isolated shadow container...`;
+            Prism.highlightElement(vulnBlock);
+            Prism.highlightElement(patchedBlock);
+
+            await animatePipeline();
+
+            patchedBlock.textContent = data.patchedCode;
+            Prism.highlightElement(patchedBlock);
+
+            diffStatus.textContent = "Hot-Swapped Live";
+            diffStatus.className = "text-xs font-semibold text-emerald-700 border border-emerald-300 px-3 py-1 rounded-full bg-emerald-50";
+
+            appendToAuditLog(data.type, data.typeClass, type);
+            showToast(`Zero-downtime hot-swap deployed for ${data.filename}`);
+
+            // Bump MySQL Sync version
+            const currentVer = document.getElementById('metric-ver');
+            const minor = parseInt(currentVer.textContent.replace('v1.0.', '')) + 1;
+            currentVer.textContent = `v1.0.${minor}`;
+
+            isRunning = false;
+        }
+
+        // Initialize with default incident records matching clean state and start terminal stream
+        window.onload = function () {
+            appendToAuditLog("KEYERROR_CRASH", "bg-purple-50 text-purple-700 border border-purple-200/80", "crash");
+
+            // Seed initial terminal stream rows
+            const initialSeeds = [
+                { method: 'GET', route: '/api/v1/health', status: 200, client: '10.0.0.1', latency: '0.9' },
+                { method: 'POST', route: '/api/v1/auth/verify', status: 200, client: '172.16.4.11', latency: '2.4' },
+                { method: 'GET', route: '/api/v1/inventory/items?limit=25', status: 200, client: '10.0.1.88', latency: '1.7' },
+                { method: 'GET', route: '/api/v1/user?name=alice', status: 200, client: '192.168.0.12', latency: '1.1' }
+            ];
+
+            initialSeeds.forEach(s => {
+                const ts = getTermTimestamp();
+                const mBg = s.method === 'POST' ? 'bg-sky-950 text-sky-400 border-sky-800' : 'bg-emerald-950 text-emerald-400 border-emerald-800';
+                appendTerminalRow(`
+                    <span class="text-slate-500 shrink-0 text-[10.5px]">${ts}</span>
+                    <span class="px-1.5 py-0.2 rounded text-[9.5px] border ${mBg} font-bold shrink-0">${s.method}</span>
+                    <span class="text-emerald-400 font-bold text-[10.5px] shrink-0">${s.status}</span>
+                    <span class="text-slate-400 truncate flex-1 text-[11px]"><span class="text-slate-500">[${s.client}]</span> ${s.route}</span>
+                    <span class="text-slate-500 font-mono text-[10px] shrink-0">${s.latency}ms</span>
+                `);
+            });
+
+            // Start live periodic WSGI stream
+            terminalStreamInterval = setInterval(pushNormalRequestLog, 1400);
         }
     </script>
 </body>
